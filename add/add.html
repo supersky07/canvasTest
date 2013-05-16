@@ -1,0 +1,82 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		 <script type="text/javascript" src="http://api.map.baidu.com/api?v=1.3">
+        </script>
+        <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+	</head>
+	<body>
+	</body>
+	<script type="text/javascript">
+		var allZoneData = [
+            {'name':'辽宁省','been':'yes','id':'01'},
+            {'name':'河北省','been':'no','id':'02'},
+            {'name':'河南省','been':'no','id':'03'},
+            {'name':'北京市','been':'yes','id':'04'},
+            {'name':'上海市','been':'yes','id':'05'},
+            {'name':'江苏省','been':'no','id':'06'},
+            {'name':'吉林省','been':'no','id':'07'},
+            {'name':'黑龙江省','been':'no','id':'08'},
+            {'name':'内蒙古自治区','been':'yes','id':'09'},
+            {'name':'青海省','been':'no','id':'10'},
+            {'name':'山东省','been':'yes','id':'11'},
+            {'name':'天津市','been':'yes','id':'12'},
+            {'name':'宁夏回族自治区','been':'no','id':'13'},
+            {'name':'陕西省','been':'yes','id':'14'},
+            {'name':'台湾','been':'no','id':'15'},
+            {'name':'海南省','been':'no','id':'16'},
+            {'name':'新疆维吾尔自治区','been':'no','id':'17'},
+            {'name':'甘肃省','been':'no','id':'18'},
+            {'name':'香港','been':'no','id':'19'},
+            {'name':'西藏自治区','been':'no','id':'20'},
+            {'name':'四川省','been':'no','id':'21'},
+            {'name':'云南省','been':'no','id':'22'},
+            {'name':'贵州省','been':'no','id':'23'},
+            {'name':'澳门','been':'no','id':'24'},
+            {'name':'广西壮族自治区','been':'no','id':'25'},
+            {'name':'广东省','been':'no','id':'26'},
+            {'name':'重庆市','been':'no','id':'27'},
+            {'name':'湖北省','been':'no','id':'28'},
+            {'name':'湖南省','been':'no','id':'29'},
+            {'name':'江西省','been':'no','id':'30'},
+            {'name':'安徽省','been':'no','id':'31'},
+            {'name':'福建省','been':'no','id':'32'},
+            {'name':'浙江省','been':'yes','id':'33'},
+            {'name':'山西省','been':'yes','id':'34'}];
+
+            var myGeo = new BMap.Geocoder();
+
+            (function(){
+            	for(var i = 0;i < allZoneData.length;i++){
+            		getAllZone(allZoneData[i].name,allZoneData[i].been,allZoneData[i].id);
+            	}
+            })();
+
+            function getAllZone (name,been,id) {
+            	var data,temp;
+               
+	           	var bdary = new BMap.Boundary();
+	           	bdary.get(name, function(rs){
+	                var count = rs.boundaries.length; 
+	                for(var j = 0; j < count; j++){
+	                	
+	                    var ply = new BMap.Polygon(rs.boundaries[j], {strokeWeight: 2, strokeColor: "#ff0000"});
+
+	                    data = ply.getPath();
+	                    
+	                    $.ajax({
+							url: "addData.php",
+							type:"POST",
+							data: {'data':data,'name' : name,'cir':j,'been':been,'id':id},
+							success: function(txt){
+								console.log(txt);
+							},
+							error: function(){
+								alert('添加数据出错！');
+							}
+						});    
+	                }                
+	           	});               
+            }
+	</script>
+</html>
