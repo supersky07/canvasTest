@@ -1,0 +1,80 @@
+<!DOCTYPE>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>全国地图</title>
+	<style type='text/css'>
+		html, body {
+		 	background: ;
+		  	overflow: visible;
+		  	width: 100%;
+		  	height: 100%;
+		}
+		#mapCanvas{
+			
+		}
+	</style>
+	<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+</head>
+<body>
+	<canvas id="mapCanvas" width="1100" height="600"></canvas>
+</body>
+<script type="text/javascript">
+		var mapCanvas = document.getElementById("mapCanvas");
+    	var context =  mapCanvas.getContext("2d");
+
+    	var cleft, ctop;
+    	var temp_left = 70, temp_top = 55;
+    	var bigger = 15;
+
+    	$(document).ready(function(){
+    		getDataAjax();
+    	});
+
+    	function getDataAjax(){
+    		$.ajax({
+                type: "GET",
+                url: "china.json",
+                dataType: "json",
+                success: function(data) {
+                   	allZone(data);
+                },
+                error: function() {
+                    alert('提交数据出错，请重新尝试！');
+                }
+            });
+    	}
+
+    	function allZone(data){
+    		var allData = eval(data);
+    		for(var i = 0;i < allData.features.length;i++){
+    			//if(allData.features[i].id == '11' ||allData.features[i].id == '02'||allData.features[i].id == '01'||allData.features[i].id == '03'||allData.features[i].id == '12'){
+    				draw(allData.features[i]);
+    			//}
+    		}
+    	}
+
+    	function draw(singleData){
+    		if(singleData.been == "no"){
+    			context.fillStyle = "white";
+    		}else{
+    			context.fillStyle = "green";
+    		}
+
+			context.beginPath();
+			cleft = (singleData.geometry.coordinates[0][0][0] - temp_left) * bigger;
+			ctop = (temp_top - singleData.geometry.coordinates[0][0][1]) * bigger;
+
+	        context.moveTo(cleft,ctop);
+	        for(var i = 0;i < singleData.geometry.coordinates[0].length;i++){
+
+	        	cleft = (singleData.geometry.coordinates[0][i][0] - temp_left) * bigger;
+				ctop = (temp_top - singleData.geometry.coordinates[0][i][1]) * bigger;
+				context.lineTo(cleft,ctop);
+	        }
+	        context.closePath();//可以把这句注释掉再运行比较下不同
+	        context.stroke();//画线框
+	        context.fill();//填充颜色	       
+    	}
+</script>
+</html>

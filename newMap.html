@@ -1,0 +1,241 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <title>全国地图</title>
+        <script type="text/javascript" src="http://api.map.baidu.com/api?v=1.3">
+        </script>
+        <style type="text/css">
+            body{
+                font-size: 13px;
+                margin: 10px;
+            }
+            .container{
+                width:90%;
+                margin: 0 auto;
+                position: relative;
+                overflow: visible;
+            }
+            #mapCanvas{
+                position: absolute;
+                top: 0;
+                left: 0;
+                border: 0px dotted blue;
+            }
+            #eventCanvas{
+                position: absolute;
+                top: 0;
+                left: 0;
+                border: 0px dotted blue;
+            }
+
+        </style>
+        <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    </head>
+    <body>
+        <div class="container">
+            <canvas id="mapCanvas" width="1100" height="630"></canvas>
+            <canvas id="eventCanvas" width="1100" height="630"></canvas>
+        </div>
+        <script type="text/javascript">
+            //+++常量定义区+++++++++++++++++++++++++++++++++++++++
+            var mapCanvas = document.getElementById("mapCanvas");
+            var context =  mapCanvas.getContext("2d");
+            var eventCanvas = document.getElementById("eventCanvas");
+            var contextEvent =  eventCanvas.getContext("2d");
+            var cleft, ctop;
+            var temp_left = 70, temp_top = 55;
+            var bigger = 15;
+
+            var allZoneData = [
+            {'name':'辽宁省','been':'yes'},
+            {'name':'河北省','been':'no'},
+            {'name':'北京','been':'yes'},
+            {'name':'上海','been':'yes'},
+            {'name':'江苏省','been':'no'},
+            {'name':'吉林省','been':'no'},
+            {'name':'黑龙江省','been':'no'},
+            {'name':'内蒙古','been':'yes'},
+            {'name':'青海省','been':'no'},
+            {'name':'山东省','been':'yes'},
+            {'name':'天津','been':'yes'},
+            {'name':'宁夏省','been':'no'},
+            {'name':'陕西省','been':'yes'},
+            {'name':'台湾','been':'no'},
+            {'name':'海南省','been':'no'},
+            {'name':'新疆','been':'no'},
+            {'name':'甘肃省','been':'no'},
+            {'name':'香港','been':'no'},
+            {'name':'西藏','been':'no'},
+            {'name':'四川省','been':'no'},
+            {'name':'云南','been':'no'},
+            {'name':'贵州省','been':'no'},
+            {'name':'澳门','been':'no'},
+            {'name':'广西','been':'no'},
+            {'name':'广东省','been':'no'},
+            {'name':'重庆市','been':'no'},
+            {'name':'湖北省','been':'no'},
+            {'name':'湖南省','been':'no'},
+            {'name':'江西省','been':'no'},
+            {'name':'安徽省','been':'no'},
+            {'name':'福建省','been':'no'},
+            {'name':'浙江省','been':'yes'},
+            {'name':'山西省','been':'yes'}];
+
+            var myGeo=new BMap.Geocoder();
+            //----------------------------------------------------
+
+            //++++++变量定义区++++++++++++++++++++++++++++++++++++
+            var tempData = [], draging = false, tempX, tempY;
+            //----------------------------------------------------
+
+            //++++++程序入口++++++++++++++++++++++++++++++++++++++
+            $(document).ready(function(){
+                 pubFuns.getAllZone();
+            });
+            //----------------------------------------------------
+
+            //++++DOM事件绑定定义区+++++++++++++++++++++++++++++++
+            $('#eventCanvas').mousedown(function(ev){
+                contextEvent.clearRect(0, 0, 1100, 630);
+                tempData = [];
+
+                var mouseX, mouseY;
+                if(ev.layerX || ev.layerX==0){
+                    mouseX = ev.layerX;
+                    mouseY = ev.layerY;
+                }else if(ev.offsetX || ev.offsetX==0){
+                    mouseX = ev.offsetX;
+                    mouseY = ev.offsetY;
+                }
+                tempX = mouseX;
+                tempY = mouseY;
+
+                mouseX = mouseX/bigger + temp_left;
+                mouseY = temp_top - mouseY/bigger;
+                draging = true;
+
+                myGeo.getLocation(new BMap.Point(mouseX, mouseY),
+                    function(result){
+                        name = result.addressComponents.province;
+                        var bdary = new BMap.Boundary();
+                        bdary.get(name, function(rs){
+                            var count = rs.boundaries.length; 
+
+                            for(var i = 0; i < count; i++){
+                                var ply = new BMap.Polygon(rs.boundaries[i], {strokeWeight: 2, strokeColor: "#ff0000"});
+                                tempData[i] = ply.getPath();
+                            }
+                            pubFuns.reDrawLine(0,0);
+                        });               
+                });
+            });
+            $('#eventCanvas').mousemove(function(ev){
+                contextEvent.clearRect(0, 0, 1100, 630);
+
+                var mouseX, mouseY;
+                if(ev.layerX || ev.layerX==0){
+                    mouseX = ev.layerX;
+                    mouseY = ev.layerY;
+                }else if(ev.offsetX || ev.offsetX==0){
+                    mouseX = ev.offsetX;
+                    mouseY = ev.offsetY;
+                }
+
+                if(draging){
+                    pubFuns.reDrawLine(mouseX - tempX, mouseY - tempY);
+                }
+            });
+            $('#eventCanvas').mouseup(function(e){
+                contextEvent.clearRect(0, 0, 1100, 630);
+                draging = false;
+            });
+            //----------------------------------------------------
+
+            //++++++公用方法定义区++++++++++++++++++++++++++++++++
+            var pubFuns = {
+                getAllZone : function () {
+                    for(var i = 0;i < allZoneData.length;i++){
+                        pubFuns.getBoundary(allZoneData[i].name,allZoneData[i].been);
+                    }
+                },
+                getBoundary : function (name, been) {       
+                    var bdary = new BMap.Boundary();
+                    bdary.get(name, function(rs){
+                        var count = rs.boundaries.length; 
+                        for(var i = 0; i < count; i++){
+                            var ply = new BMap.Polygon(rs.boundaries[i], {strokeWeight: 2, strokeColor: "#ff0000"});
+                            pubFuns.drawLine(ply.getPath(), been);     
+                        }                
+                    });   
+                },
+                drawLine : function (data, been) {
+                    var data = eval(data);
+                    if(been == 'yes'){
+                        context.fillStyle = "green";
+                    }else{
+                        context.fillStyle = "white";
+                    }
+                    context.beginPath();
+
+                    cleft = (data[0].lng - temp_left) * bigger;
+                    ctop = (temp_top - data[0].lat) * bigger;
+
+                    context.moveTo(cleft,ctop);
+                    
+                    for(var i = 1;i < data.length;i++){
+                        cleft = (data[i].lng - temp_left) * bigger;
+                        ctop = (temp_top - data[i].lat) * bigger;
+                        context.lineTo(cleft,ctop);
+                    }
+                    
+                    context.closePath();
+                    context.stroke();
+                    context.fill();
+                },
+                reDrawLine : function(l,t){
+                    var data;
+                    for(var i = 0;i < tempData.length;i++){
+                        data = eval(tempData[i]);
+
+                        //先画与原地图的连接线
+                        for(var k = 0;k < data.length;k++){
+                            if(k % 60 == 0){
+                                contextEvent.beginPath();
+                                contextEvent.strokeStyle = "rgba(0,120,60,0.4)";
+                                cleft = (data[k].lng - temp_left) * bigger;
+                                ctop = (temp_top - data[k].lat) * bigger;
+                                contextEvent.moveTo(cleft,ctop);
+                                cleft = (data[k].lng - temp_left) * bigger + l;
+                                ctop = (temp_top - data[k].lat) * bigger + t;
+                                contextEvent.lineTo(cleft,ctop);
+                                contextEvent.closePath();
+                                contextEvent.stroke();
+                            }
+                        }
+
+                        //在第二层canvas中绘制已选中的地图
+                        contextEvent.fillStyle = "blue";
+                        contextEvent.globalAlpha = 0.8;
+                        contextEvent.beginPath();
+                        cleft = (data[0].lng - temp_left) * bigger + l;
+                        ctop = (temp_top - data[0].lat) * bigger + t;
+
+                        contextEvent.moveTo(cleft,ctop);
+                        
+                        for(var j = 1;j < data.length;j++){
+                            cleft = (data[j].lng - temp_left) * bigger + l;
+                            ctop = (temp_top - data[j].lat) * bigger + t;
+                            contextEvent.lineTo(cleft,ctop);
+                        }
+                        
+                        contextEvent.closePath();
+                        contextEvent.stroke();
+                        contextEvent.fill();                  
+                    }
+                }
+            };
+            //-------------------------------------------------------
+        </script>
+    </body>
+</html>
